@@ -14,7 +14,44 @@
 		$filter = $_GET['status'];
 	} else {
 		$filter = 'all';
-	} ?>
+	} 
+	$csvlines = Array('id,result,resulttotal,percentage,Pass/Fail,Status,Date');
+	foreach( $results as $result ){ 
+		$csvline =  $result['id'].","; 
+		if($result['total'] == 0) {$csvline .= ',,';} else {$csvline .= $result['score'].",".$result['total'].",";}
+		if($result['total'] == 0) {$csvline .= ',';} else {$csvline .= $result['percentage']."%,";}
+		if ($result['pass'] == 1) {$csvline .= "Pass,";} else {$csvline .= "Fail,";}
+		$csvline .= ucfirst($result['status']).","; 
+		if (!empty($result['datetaken'])) { $csvline .= date('d-m-y G:i:s',$result['datetaken']); }; 
+		$csvlines[] = $csvline;
+	} 
+?>
+<script>
+	function open_csv_file() {
+		if (document.queryCommandSupported ("SaveAs")) {
+			//IE
+			var savecontent = '<?php echo implode('\r\n', $csvlines); ?>';
+			var doc = window.open("results.csv", "_blank");
+			doc.document.charset = "utf-8";
+			if (typeof savecontent == "string") {
+				doc.document.write(savecontent);
+			}
+			var success = doc.document.execCommand('SaveAs', null, 'results.csv')
+			if (success) {
+				doc.close();
+			};
+		} else {
+			//Other browsers
+			var savecontent = '<?php echo implode('%0A', $csvlines); ?>';
+			//newfileheader = "Content-disposition: Attachment; filename=results.csv";
+			newfileheader = "data:application/CSV;filename=results.csv,";
+			window.open(newfileheader+savecontent);
+		}
+		
+	}
+
+</script>
+			
 	
 		<form method="post" action="<?php echo WPSQT_URL_MAIN.'&section=resultsdelete&subsection=quiz&id='.$_GET['id']; ?>">
 	
@@ -36,6 +73,7 @@
 			</ul>
 			
 			<div class="tablenav-pages">
+				<a href="javascript:open_csv_file()" class="page-numbers" download="results.csv">CSV <?php echo $currentPage."/".$numberOfPages;?></a>
 		   		<?php echo Wpsqt_Core::getPaginationLinks($currentPage, $numberOfPages); ?>	
 		   	</div>
 		</div>
